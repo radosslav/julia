@@ -1229,7 +1229,7 @@ end
 @deprecate rsearchindex(s::AbstractString, c::Char) findlast(equalto(c), s)
 @deprecate rsearchindex(s::AbstractString, c::Char, i::Integer) findprev(equalto(c), s, i)
 
-@deprecate ismatch(r::Regex, s::AbstractString) contains(s, r)
+@deprecate ismatch(r::Regex, s::AbstractString) isfound(r, s)
 
 @deprecate findin(a, b) findall(occursin(b), a)
 
@@ -1453,6 +1453,10 @@ function slicedim(A::AbstractVector, d::Integer, i::Number)
         copy(selectdim(A, d, i))
     end
 end
+
+# PR #26283
+@deprecate contains(haystack, needle) isfound(needle, haystack)
+@deprecate contains(s::AbstractString, r::Regex, offset::Integer) isfound(r, s, offset=offset)
 
 # Issue #25786
 @deprecate_binding DevNull devnull
