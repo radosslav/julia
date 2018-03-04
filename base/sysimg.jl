@@ -153,26 +153,26 @@ include("reinterpretarray.jl")
 
 # ## dims-type-converting Array constructors for convenience
 # type and dimensionality specified, accepting dims as series of Integers
-Vector{T}(::Uninitialized, m::Integer) where {T} = Vector{T}(uninitialized, Int(m))
-Matrix{T}(::Uninitialized, m::Integer, n::Integer) where {T} = Matrix{T}(uninitialized, Int(m), Int(n))
+Vector{T}(::Uninitialized, m::Integer) where {T} = Vector{T}(uninit, Int(m))
+Matrix{T}(::Uninitialized, m::Integer, n::Integer) where {T} = Matrix{T}(uninit, Int(m), Int(n))
 # type but not dimensionality specified, accepting dims as series of Integers
-Array{T}(::Uninitialized, m::Integer) where {T} = Array{T,1}(uninitialized, Int(m))
-Array{T}(::Uninitialized, m::Integer, n::Integer) where {T} = Array{T,2}(uninitialized, Int(m), Int(n))
-Array{T}(::Uninitialized, m::Integer, n::Integer, o::Integer) where {T} = Array{T,3}(uninitialized, Int(m), Int(n), Int(o))
-Array{T}(::Uninitialized, d::Integer...) where {T} = Array{T}(uninitialized, convert(Tuple{Vararg{Int}}, d))
+Array{T}(::Uninitialized, m::Integer) where {T} = Array{T,1}(uninit, Int(m))
+Array{T}(::Uninitialized, m::Integer, n::Integer) where {T} = Array{T,2}(uninit, Int(m), Int(n))
+Array{T}(::Uninitialized, m::Integer, n::Integer, o::Integer) where {T} = Array{T,3}(uninit, Int(m), Int(n), Int(o))
+Array{T}(::Uninitialized, d::Integer...) where {T} = Array{T}(uninit, convert(Tuple{Vararg{Int}}, d))
 # dimensionality but not type specified, accepting dims as series of Integers
-Vector(::Uninitialized, m::Integer) = Vector{Any}(uninitialized, Int(m))
-Matrix(::Uninitialized, m::Integer, n::Integer) = Matrix{Any}(uninitialized, Int(m), Int(n))
+Vector(::Uninitialized, m::Integer) = Vector{Any}(uninit, Int(m))
+Matrix(::Uninitialized, m::Integer, n::Integer) = Matrix{Any}(uninit, Int(m), Int(n))
 # empty vector constructor
-Vector() = Vector{Any}(uninitialized, 0)
+Vector() = Vector{Any}(uninit, 0)
 
 # Array constructors for nothing and missing
 # type and dimensionality specified
-Array{T,N}(::Nothing, d...) where {T,N} = fill!(Array{T,N}(uninitialized, d...), nothing)
-Array{T,N}(::Missing, d...) where {T,N} = fill!(Array{T,N}(uninitialized, d...), missing)
+Array{T,N}(::Nothing, d...) where {T,N} = fill!(Array{T,N}(uninit, d...), nothing)
+Array{T,N}(::Missing, d...) where {T,N} = fill!(Array{T,N}(uninit, d...), missing)
 # type but not dimensionality specified
-Array{T}(::Nothing, d...) where {T} = fill!(Array{T}(uninitialized, d...), nothing)
-Array{T}(::Missing, d...) where {T} = fill!(Array{T}(uninitialized, d...), missing)
+Array{T}(::Nothing, d...) where {T} = fill!(Array{T}(uninit, d...), nothing)
+Array{T}(::Missing, d...) where {T} = fill!(Array{T}(uninit, d...), missing)
 
 include("abstractdict.jl")
 

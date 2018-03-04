@@ -25,7 +25,7 @@ GC.gc()
 
 # issue #1211
 include("ziggurat.jl")
-a = Vector{Float64}(uninitialized, 1000000)
+a = Vector{Float64}(uninit, 1000000)
 @timeit randn_zig!(a) "randn_zig" "Ziggurat gaussian number generator"
 
 # issue #950

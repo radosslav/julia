@@ -34,7 +34,7 @@ function type_lift_pass!(ir::IRCode)
                     item, which, use = pop!(worklist)
                     def = ir.stmts[item]
                     edges = copy(def.edges)
-                    values = Vector{Any}(uninitialized, length(edges))
+                    values = Vector{Any}(uninit, length(edges))
                     new_phi = insert_node!(ir, item, Bool, PhiNode(edges, values))
                     processed[item] = new_phi
                     if first

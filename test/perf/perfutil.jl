@@ -107,7 +107,7 @@ end
 function maxrss(name)
     # FIXME: call uv_getrusage instead here
     @static if Sys.islinux()
-        rus = Vector{Int64}(uninitialized, div(144,8))
+        rus = Vector{Int64}(uninit, div(144,8))
         fill!(rus, 0x0)
         res = ccall(:getrusage, Int32, (Int32, Ptr{Cvoid}), 0, rus)
         if res == 0

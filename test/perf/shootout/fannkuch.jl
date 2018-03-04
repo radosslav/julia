@@ -8,7 +8,7 @@
 # Based on the Javascript program
 #
 function fannkuch(n)
-    p = Vector{Int32}(uninitialized, n)
+    p = Vector{Int32}(uninit, n)
     for i = 1:n
         p[i] = i
     end

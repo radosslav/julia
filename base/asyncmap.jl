@@ -246,7 +246,7 @@ end
 
 # Special handling for some types.
 function asyncmap(f, s::AbstractString; kwargs...)
-    s2 = Vector{Char}(uninitialized, length(s))
+    s2 = Vector{Char}(uninit, length(s))
     asyncmap!(f, s2, s; kwargs...)
     return String(s2)
 end

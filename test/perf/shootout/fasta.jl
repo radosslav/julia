@@ -42,7 +42,7 @@ function choose_char(cs)
 end
 function random_fasta(symb, pr, n)
     cs = cumsum(pr)
-    line = Vector{UInt8}(uninitialized, line_width)
+    line = Vector{UInt8}(uninit, line_width)
     k = n
     while k > 0
         m = min(k, line_width)
