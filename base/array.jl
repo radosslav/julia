@@ -413,8 +413,11 @@ oneunit(x::AbstractMatrix{T}) where {T} = _one(oneunit(T), x)
 
 ## Conversions ##
 
-# arises in similar(dest, Pair{Union{},Union{}}) where dest::Dict:
-convert(::Type{Vector{Union{}}}, a::Vector{Union{}}) = a
+convert(::Type{T}, a::T) where {T<:Array} = a
+convert(::Type{T}, a::AbstractArray) where {T<:Array} = T(a)
+
+convert(::Type{AbstractArray{T}}, a::AbstractArray) where {T} = AbstractArray{T}(a)
+convert(::Type{AbstractArray{T,N}}, a::AbstractArray{<:Any,N}) where {T,N} = AbstractArray{T,N}(a)
 
 promote_rule(a::Type{Array{T,n}}, b::Type{Array{S,n}}) where {T,n,S} = el_same(promote_type(T,S), a, b)
 

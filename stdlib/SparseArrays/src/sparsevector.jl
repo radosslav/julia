@@ -420,6 +420,7 @@ SparseVector{Tv,Ti}(s::SparseVector) where {Tv,Ti} =
 SparseVector{Tv}(s::SparseVector{<:Any,Ti}) where {Tv,Ti} =
     SparseVector{Tv,Ti}(s.n, s.nzind, convert(Vector{Tv}, s.nzval))
 
+convert(T::Type{<:SparseVector}, m::AbstractVector) = T(m)
 
 ### copying
 function prep_sparsevec_copy_dest!(A::SparseVector, lB, nnzB)

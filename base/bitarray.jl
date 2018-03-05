@@ -532,6 +532,9 @@ julia> BitArray(x+y == 3 for x = 1:2 for y = 1:3)
 """
 BitArray(itr) = gen_bitarray(IteratorSize(itr), itr)
 
+convert(::Type{BitArray}, a::AbstractArray) = BitArray(a)
+convert(::Type{BitArray{N}}, a::AbstractArray{<:Any,N}) where {N} = BitArray{N}(a)
+
 # generic constructor from an iterable without compile-time info
 # (we pass start(itr) explicitly to avoid a type-instability with filters)
 gen_bitarray(isz::IteratorSize, itr) = gen_bitarray_from_itr(itr, start(itr))

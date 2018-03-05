@@ -97,6 +97,9 @@ abstract type AbstractRange{T} <: AbstractArray{T,1} end
 RangeStepStyle(::Type{<:AbstractRange}) = RangeStepIrregular()
 RangeStepStyle(::Type{<:AbstractRange{<:Integer}}) = RangeStepRegular()
 
+convert(::Type{T}, r::T) where {T<:AbstractRange} = r
+convert(::Type{T}, r::AbstractRange) where {T<:AbstractRange} = T(r)
+
 ## ordinal ranges
 
 abstract type OrdinalRange{T,S} <: AbstractRange{T} end
