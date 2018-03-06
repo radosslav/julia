@@ -123,7 +123,7 @@ for i in 1:n
     end
 end
 
-for f in (watch_file, poll_file)
+for f in (watch_file, watch_folder, poll_file)
     local f
     @test_throws ArgumentError f("adir\0bad")
 end
@@ -166,15 +166,46 @@ test2_12992()
 #######################################################################
 # This section tests file watchers.                                   #
 #######################################################################
+const F_GETPATH = Sys.islinux() || Sys.iswindows() || Sys.isapple()  # platforms where F_GETPATH is available
+const F_PATH = F_GETPATH ? "afile.txt" : ""
 dir = mktempdir()
 file = joinpath(dir, "afile.txt")
-# like touch, but lets the operating system update the timestamp
-# for greater precision on some platforms (windows)
-@test close(open(file,"w")) === nothing
 
-function test_file_poll(channel,interval,timeout_s)
+# initialize a watch_folder instance and create afile.txt
+function test_init_afile()
+    @test isempty(FileWatching.watched_folders)
+    @test @elapsed(@test(watch_folder(dir, 0) == ("" => FileWatching.FileEvent()))) <= 2
+    @test @elapsed(@test(watch_folder(dir, 0) == ("" => FileWatching.FileEvent()))) <= 0.3
+    @test length(FileWatching.watched_folders) == 1
+    @test unwatch_folder(dir) === nothing
+    @test isempty(FileWatching.watched_folders)
+    @test 0.001 <= @elapsed(@test(watch_folder(dir, 0.004) == ("" => FileWatching.FileEvent()))) <= 2
+    @test 0.001 <= @elapsed(@test(watch_folder(dir, 0.004) == ("" => FileWatching.FileEvent()))) <= 0.3
+    @test unwatch_folder(dir) === nothing
+    @test 0.9 <= @elapsed(@test(watch_folder(dir, 1) == ("" => FileWatching.FileEvent()))) <= 4
+    @test 0.9 <= @elapsed(@test(watch_folder(dir, 1) == ("" => FileWatching.FileEvent()))) <= 1.3
+    # like touch, but lets the operating system update the timestamp
+    # for greater precision on some platforms (windows)
+    @test close(open(file, "w")) === nothing
+    @test @elapsed(@test(watch_folder(dir) == (F_PATH => FileWatching.FileEvent(FileWatching.UV_RENAME)))) <= 0.3
+    @test close(open(file, "w")) === nothing
+    sleep(3)
+    let c
+        @test @elapsed(c = watch_folder(dir, 0)) <= 0.3
+        @test c.first == F_PATH
+        @test c.second.changed || c.second.renamed
+        @test !c.second.timedout
+    end
+    @test unwatch_folder(dir) === nothing
+    @test @elapsed(@test(watch_folder(dir, 0) == ("" => FileWatching.FileEvent()))) <= 0.3
+    @test 0.9 <= @elapsed(@test(watch_folder(dir, 1) == ("" => FileWatching.FileEvent()))) <= 1.3
+    @test length(FileWatching.watched_folders) == 1
+    nothing
+end
+
+function test_file_poll(channel, interval, timeout_s)
     rc = poll_file(file, interval, timeout_s)
-    put!(channel,rc)
+    put!(channel, rc)
 end
 
 function test_timeout(tval)
@@ -192,8 +223,8 @@ function test_touch(slval)
     channel = Channel(1)
     @async test_file_poll(channel, tval/3, tval)
     sleep(tval/3)  # one poll period
-    f = open(file,"a")
-    write(f,"Hello World\n")
+    f = open(file, "a")
+    write(f, "Hello World\n")
     close(f)
     tr = take!(channel)
     @test ispath(tr[1]) && ispath(tr[2])
@@ -217,26 +248,35 @@ function test_monitor_wait(tval)
     fm = FileMonitor(file)
     @async begin
         sleep(tval)
-        f = open(file,"a")
-        write(f,"Hello World\n")
+        f = open(file, "a")
+        write(f, "Hello World\n")
+        close(f)
+    end
+    events = wait(fm)
+    close(fm)
+    @test events.changed && !events.timedout && !events.renamed
+end
+
+function test_monitor2_wait(tval)
+    fm = FolderMonitor(file)
+    @async begin
+        sleep(tval)
+        f = open(file, "a")
+        write(f, "Hello World\n")
         close(f)
     end
     fname, events = wait(fm)
     close(fm)
-    if Sys.islinux() || Sys.iswindows() || Sys.isapple()
-        @test fname == basename(file)
-    else
-        @test fname == ""  # platforms where F_GETPATH is not available
-    end
-    @test events.changed
+    @test fname == F_PATH
+    @test events.changed && !events.timedout && !events.renamed
 end
 
 function test_monitor_wait_poll()
     pfw = PollingFileWatcher(file, 5.007)
     @async begin
         sleep(2.5)
-        f = open(file,"a")
-        write(f,"Hello World\n")
+        f = open(file, "a")
+        write(f, "Hello World\n")
         close(f)
     end
     (old, new) = wait(pfw)
@@ -244,21 +284,45 @@ function test_monitor_wait_poll()
     @test new.mtime - old.mtime > 2.5 - 1.5 # mtime may only have second-level accuracy (plus add some hysteresis)
 end
 
+test_init_afile()
 test_timeout(0.1)
 test_timeout(1)
 test_touch(6)
 test_monitor_wait(0.1)
 test_monitor_wait(0.1)
+test_monitor2_wait(0.1)
+test_monitor2_wait(0.1)
 test_monitor_wait_poll()
 test_monitor_wait_poll()
 test_watch_file_timeout(0.1)
 test_watch_file_change(6)
 
+mv(file, file * "~")
+mv(file * "~", file)
+let changes = []
+    while true
+        let c
+            @test @elapsed(c = watch_folder(dir, 0)) < 0.3
+            (c.second::FileWatching.FileEvent).timedout && break
+            push!(changes, c)
+        end
+    end
+    @show changes
+    @test 6 < length(changes) < 20
+    @test pop!(changes) == (F_PATH => FileWatching.FileEvent(FileWatching.UV_RENAME))
+    @test pop!(changes) == ((F_GETPATH ? F_PATH * "~" : "") => FileWatching.FileEvent(FileWatching.UV_RENAME))
+    @test all(x -> (x[1] == F_PATH && (x[2].changed || x[2].renamed)), changes) || changes
+end
+
 @test_throws(Base.UVError("FileMonitor (start)", Base.UV_ENOENT),
              watch_file("____nonexistent_file", 10))
+@test_throws(Base.UVError("FolderMonitor (start)", Base.UV_ENOENT),
+             watch_folder("____nonexistent_file", 10))
 @test(@elapsed(
     @test(poll_file("____nonexistent_file", 1, 3.1) ===
           (Base.Filesystem.StatStruct(), EOFError()))) > 3)
 
+unwatch_folder(dir)
+@test isempty(FileWatching.watched_folders)
 rm(file)
 rm(dir)
